@@ -33,6 +33,10 @@ public class MainActivity extends Activity {
         super.onCreate(state);
         web = new WebView(this);
         setContentView(web);
+        web.setOnApplyWindowInsetsListener((view, insets) -> {
+            view.setPadding(insets.getSystemWindowInsetLeft(), insets.getSystemWindowInsetTop(), insets.getSystemWindowInsetRight(), insets.getSystemWindowInsetBottom());
+            return insets;
+        });
         WebView.setWebContentsDebuggingEnabled(false);
         web.getSettings().setJavaScriptEnabled(true);
         web.getSettings().setDomStorageEnabled(true);
@@ -72,7 +76,9 @@ public class MainActivity extends Activity {
         if(request==PICK_FILE && fileCallback!=null){fileCallback.onReceiveValue(result==RESULT_OK&&intent!=null&&intent.getData()!=null?new Uri[]{intent.getData()}:null);fileCallback=null;}
     }
     @Override protected void onSaveInstanceState(Bundle out){super.onSaveInstanceState(out);web.saveState(out);}
-    @Override public void onBackPressed(){web.evaluateJavascript("document.querySelector('[aria-label=\"Закрыть\"]')?.click()",null);}
+    @Override public void onBackPressed(){
+        web.evaluateJavascript("(function(){const close=document.querySelector('[aria-label=\"Закрыть\"]');if(close){close.click();return true;}return false;})()", result -> {if(!"true".equals(result))moveTaskToBack(true);});
+    }
     @Override protected void onDestroy(){if(fileCallback!=null)fileCallback.onReceiveValue(null);web.destroy();super.onDestroy();}
     final class DownloadBridge {
         @JavascriptInterface public void saveBase64(String encoded,String requestedName,String requestedType){
